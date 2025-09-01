@@ -1,20 +1,16 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import axios from "axios";
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateText";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
+export async function POST(req: Request) {
   if (!API_KEY) {
-    return res.status(500).json({ error: "API key is missing!" });
+    return NextResponse.json({ error: "API key is missing!" }, { status: 500 });
   }
 
   try {
-    const { chatHistory } = req.body;
+    const { chatHistory } = await req.json();
 
     const formattedHistory = chatHistory.map((msg: { text: string; isUser: boolean }) => ({
       role: msg.isUser ? "user" : "model",
@@ -34,9 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     );
 
-    return res.status(200).json(response.data);
+    return NextResponse.json(response.data);
   } catch (error: any) {
     console.error("❌ Gemini API Error:", error.response?.data || error.message);
-    return res.status(error.response?.status || 500).json({ error: error.message });
+    return NextResponse.json({ error: error.message }, { status: error.response?.status || 500 });
   }
 }
